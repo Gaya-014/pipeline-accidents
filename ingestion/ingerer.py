@@ -1,12 +1,12 @@
 """
 Ingestion des données BAAC (accidents corporels de la route).
 
-Ce script :
-1. demande à data.gouv.fr la liste des fichiers du jeu de données ;
-2. télécharge, pour chaque année, les 4 fichiers CSV (caractéristiques, lieux, usagers, véhicules) ;
-3. les charge TELS QUELS, en texte, dans PostgreSQL (schéma "raw").
+Étapes :
+1. interroger l'API data.gouv.fr pour lister les fichiers du jeu de données ;
+2. télécharger, pour chaque année, les 4 fichiers CSV (caractéristiques, lieux, usagers, véhicules) ;
+3. les charger sans transformation, en texte, dans PostgreSQL (schéma "raw").
 
-Je ne nettoie rien ici : le nettoyage est fait plus tard avec dbt (SQL).
+Le nettoyage est réalisé en aval avec dbt.
 """
 import os
 import re
@@ -23,9 +23,10 @@ DOSSIER = Path("/data/raw")
 ANNEES = [int(a) for a in os.environ.get("ANNEES", "2023").split(",")]
 
 # certaines années appellent la clé "accident_id" au lieu de "num_acc" : c'est la même colonne
+# Noms de colonnes qui diffèrent selon l'année (ex. 2022 : accident_id au lieu de Num_Acc)
 RENOMMAGES = {"accident_id": "num_acc"}
 
-# mots à chercher dans le nom des fichiers (les noms changent un peu d'une année à l'autre)
+# Mots-clés recherchés dans le titre des fichiers (la nomenclature varie selon les années)
 MOTS = {
     "carac": ["carac", "carc"],
     "lieux": ["lieux"],
@@ -35,7 +36,7 @@ MOTS = {
 
 
 def normaliser(noms):
-    # noms de colonnes en minuscules, sans espaces ni caractères bizarres
+    # Noms de colonnes en minuscules, sans espaces ni caractères spéciaux
     return [re.sub(r"[^0-9a-z_]+", "_", str(n).strip().lower()).strip("_") for n in noms]
 
 
@@ -56,7 +57,7 @@ def trouver(ressources, table, annee):
     if not candidats:
         de_cette_annee = [r.get("title") for r in ressources if str(annee) in (r.get("title") or "")]
         raise FileNotFoundError(f"aucun fichier '{table}' trouvé pour {annee}. Fichiers de cette année : {de_cette_annee}")
-    candidats.sort(key=lambda r: len(r.get("title") or ""))   # s'il y en a plusieurs, je prends le nom le plus simple
+    candidats.sort(key=lambda r: len(r.get("title") or ""))   # en cas de doublon, retenir le titre le plus court
     return candidats[0]
 
 
@@ -78,7 +79,7 @@ def telecharger(ressource, annee, table):
 
 
 def lire_csv(chemin):
-    # je lis TOUT en texte (dtype=str) : seules les cases vraiment vides deviennent NULL
+    # Lecture intégrale en texte (dtype=str) : seules les cellules vides deviennent NULL
     for sep in (";", ","):
         for encodage in ("utf-8-sig", "latin-1"):
             try:
@@ -95,7 +96,7 @@ def lire_csv(chemin):
 
 
 def preparer_table(df, annee):
-    # j'ajoute l'année et le numéro de ligne dans le fichier (utile pour garder l'ordre d'origine)
+    # Ajout de l'année et du numéro de ligne d'origine (utile pour départager des lignes en aval)
     df = df.copy()
     df["annee"] = str(annee)
     df["ligne"] = [str(i) for i in range(1, len(df) + 1)]
@@ -106,14 +107,14 @@ def charger(cur, table, df, annee):
     df = preparer_table(df, annee)
     colonnes = list(df.columns)
 
-    # la table est créée au premier chargement, puis je lui ajoute les colonnes qui manquent
+    # Création de la table au premier chargement, puis ajout des colonnes manquantes
     cur.execute(sql.SQL("CREATE TABLE IF NOT EXISTS raw.{} (annee integer, ligne integer)").format(sql.Identifier(table)))
     for col in colonnes:
         if col not in ("annee", "ligne"):
             cur.execute(sql.SQL("ALTER TABLE raw.{} ADD COLUMN IF NOT EXISTS {} text")
                         .format(sql.Identifier(table), sql.Identifier(col)))
 
-    # je supprime l'année avant de la recharger : relancer le script ne crée pas de doublons
+    # Suppression de l'année avant rechargement : le script est idempotent
     cur.execute(sql.SQL("DELETE FROM raw.{} WHERE annee = %s").format(sql.Identifier(table)), (annee,))
 
     ordre = sql.SQL(", ").join(sql.Identifier(c) for c in colonnes)
@@ -148,7 +149,7 @@ def main():
         for annee in ANNEES:
             print(f"\n=== Année {annee} ===")
             try:
-                # je télécharge et je lis les 4 fichiers AVANT de toucher à la base
+                # Téléchargement et lecture des 4 fichiers avant toute écriture en base
                 tables = {}
                 for table in MOTS:
                     chemin = telecharger(trouver(ressources, table, annee), annee, table)

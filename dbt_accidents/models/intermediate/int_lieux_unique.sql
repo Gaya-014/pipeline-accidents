@@ -1,5 +1,5 @@
 -- Un seul lieu par accident : celui où la vitesse maximale autorisée est la plus élevée.
--- (À égalité, je garde la première ligne du fichier. Même règle que dans mon notebook.)
+-- En cas d'égalité, la première ligne du fichier est retenue (même règle que dans le notebook).
 select *
 from (
     select

@@ -39,7 +39,7 @@ services:
       db:
         condition: service_healthy
 
-  train:                       # lit la table marts, entraîne, écrit dans ./modele
+  train:                       # lit la table marts, entraîne le modèle, écrit dans ./modele
     build: ./app
     env_file: .env
     environment:

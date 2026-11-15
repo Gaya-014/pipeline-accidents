@@ -1,9 +1,9 @@
 -- Une ligne par lieu (en 2023 certains accidents ont plusieurs lieux).
--- Je garde seulement les colonnes utiles : pr, pr1, larrout, lartpc, v1, v2, voie sont laissées de côté.
+-- Seules les colonnes utiles à la modélisation sont conservées (pr, pr1, larrout, lartpc, v1, v2, voie écartées).
 select
     trim(num_acc)           as num_acc,
     annee,
-    ligne,                                   -- numéro de la ligne dans le fichier d'origine
+    ligne,                                   -- numéro de ligne dans le fichier d'origine
     {{ code('catr') }}      as catr,
     {{ code('circ') }}      as circ,
     {{ to_int('nbv') }}     as nbv,
@@ -13,5 +13,5 @@ select
     {{ code('surf') }}      as surf,
     {{ code('infra') }}     as infra,
     {{ code('situ') }}      as situ,
-    {{ to_int('vma') }}     as vma_brute     -- vitesse autorisée avant nettoyage des valeurs impossibles
+    {{ to_int('vma') }}     as vma_brute     -- vitesse maximale autorisée, avant filtrage des valeurs aberrantes
 from {{ source('raw', 'lieux') }}

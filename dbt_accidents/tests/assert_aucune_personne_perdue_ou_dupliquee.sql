@@ -1,5 +1,5 @@
--- La table finale doit avoir autant de lignes que les usagers dont la gravité est connue.
--- Sinon une jointure a dupliqué ou perdu des personnes.
+-- La table finale doit contenir autant de lignes que les usagers dont la gravité est connue.
+-- Un écart indique qu'une jointure a dupliqué ou perdu des personnes.
 select *
 from (
     select

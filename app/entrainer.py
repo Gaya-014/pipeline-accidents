@@ -1,11 +1,12 @@
 """
-Entraînement du modèle sur la table marts.accidents_usagers (créée par dbt).
+Entraînement du modèle sur la table marts.accidents_usagers (produite par dbt).
 
-Je découpe dans le TEMPS, comme en vrai (on apprend sur le passé et on prédit le futur) :
-  - validation : l'avant-dernière année (sert à choisir le seuil de décision)
-  - test       : la dernière année (2023), jamais utilisée avant
-  - le modèle final est réentraîné sur toutes les années avant le test
-Je n'ai donc plus besoin de séparer "par accident" : deux années différentes ne partagent aucun accident.
+Évaluation temporelle : on apprend sur le passé et on prédit le futur.
+  - apprentissage : toutes les années antérieures à la validation ;
+  - validation    : l'avant-dernière année, utilisée pour choisir le seuil de décision ;
+  - test          : la dernière année, évaluée une seule fois ;
+  - le modèle final est réentraîné sur apprentissage + validation.
+Deux années distinctes ne partagent aucun accident : pas de fuite entre les jeux.
 """
 import io
 import json
@@ -37,7 +38,7 @@ COL_CAT = ["place", "catu", "sexe", "trajet", "secu1", "secu2", "locp", "actp",
            "lum", "agg", "int", "atm", "col", "mois", "jour_semaine",
            "catr", "circ", "vosp", "prof", "plan", "surf", "infra", "situ"]
 
-# réglages trouvés dans mon notebook (recherche aléatoire + validation croisée)
+# Hyperparamètres issus d'une recherche aléatoire avec validation croisée (voir le notebook du premier projet)
 PARAMS = dict(learning_rate=0.03, max_depth=8, max_leaf_nodes=63, min_samples_leaf=100,
               max_iter=300, l2_regularization=0.0)
 
@@ -106,7 +107,7 @@ def entrainer(df):
     X, y = df[COL_NUM + COL_CAT], df["grave"]
     masque = {"train": df["annee"].isin(annees_train), "val": df["annee"] == annee_val, "test": df["annee"] == annee_test}
 
-    # 1) j'apprends sur le passé, je choisis le seuil sur l'année de validation
+    # 1) Apprentissage sur le passé ; le seuil de décision est choisi sur l'année de validation
     debut = time.time()
     modele_a = nouveau_modele().fit(X[masque["train"]], y[masque["train"]])
     proba_val = modele_a.predict_proba(X[masque["val"]])[:, 1]
@@ -116,7 +117,7 @@ def entrainer(df):
     mesures_val = mesures(y[masque["val"]], proba_val, seuil)
     print(f"validation {annee_val} : PR-AUC {mesures_val['pr_auc']} | seuil choisi {seuil:.2f} ({time.time() - debut:.0f} s)")
 
-    # 2) j'entraîne le modèle final sur train + validation, j'évalue UNE fois sur le test
+    # 2) Modèle final entraîné sur apprentissage + validation, évalué une seule fois sur le test
     debut = time.time()
     masque_final = masque["train"] | masque["val"]
     modele = nouveau_modele().fit(X[masque_final], y[masque_final])
@@ -124,7 +125,7 @@ def entrainer(df):
     mesures_test = mesures(y[masque["test"]], proba_test, seuil)
     print(f"test {annee_test} : {mesures_test} ({time.time() - debut:.0f} s)")
 
-    # 3) figures
+    # 3) Figures
     pred_test = (proba_test >= seuil).astype(int)
     fig, axes = plt.subplots(1, 2, figsize=(11, 4))
     ConfusionMatrixDisplay.from_predictions(y[masque["test"]], pred_test, display_labels=["pas grave", "grave"],
@@ -138,7 +139,7 @@ def entrainer(df):
     plt.savefig(SORTIE / "resultats_test.png", dpi=130)
     plt.close()
 
-    # 4) importance des variables (mélange d'une variable à la fois sur un échantillon du test)
+    # 4) Importance par permutation, calculée sur un échantillon du jeu de test
     echantillon = X[masque["test"]].sample(n=min(4000, int(masque["test"].sum())), random_state=GRAINE)
     imp = permutation_importance(modele, echantillon, y.loc[echantillon.index], scoring="average_precision",
                                  n_repeats=3, random_state=GRAINE, n_jobs=1)
@@ -151,7 +152,7 @@ def entrainer(df):
     plt.savefig(SORTIE / "importance_variables.png", dpi=130)
     plt.close()
 
-    # 5) sauvegarde : modèle + seuil + valeurs par défaut (pour l'application) + mesures
+    # 5) Sauvegarde : modèle, seuil, valeurs par défaut (pour l'application) et métriques
     defauts = {c: float(X.loc[masque_final, c].median()) for c in COL_NUM}
     defauts.update({c: str(X.loc[masque_final, c].mode()[0]) for c in COL_CAT})
     joblib.dump({"pipeline": modele, "seuil": seuil, "colonnes": COL_NUM + COL_CAT, "defauts": defauts,

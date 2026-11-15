@@ -1,4 +1,4 @@
--- Une ligne par accident. Je convertis les textes bruts en vrais types.
+-- Une ligne par accident. Conversion des textes bruts en types natifs.
 with brut as (
     select
         trim(num_acc)                                as num_acc,
@@ -17,7 +17,7 @@ with brut as (
 
 select
     *,
-    -- la date seulement si elle existe vraiment (31 février -> NULL au lieu d'une erreur)
+    -- Date reconstituée uniquement si elle est valide (31 février -> NULL au lieu d'une erreur)
     case
         when an is not null and mois between 1 and 12 and jour between 1 and 31
              and pg_input_is_valid(

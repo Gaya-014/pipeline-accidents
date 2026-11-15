@@ -1,8 +1,8 @@
--- Table finale : une ligne par personne (dont on connaît la gravité), avec les infos de l'accident,
--- du lieu et du véhicule. C'est elle que le modèle de machine learning va lire.
+-- Table finale : une ligne par personne dont la gravité est connue, enrichie des informations de l'accident,
+-- du lieu et du véhicule. Elle sert d'entrée au modèle de machine learning.
 with usagers as (
     select * from {{ ref('stg_usagers') }}
-    where grav in ('1', '2', '3', '4')          -- je retire les personnes sans gravité renseignée
+    where grav in ('1', '2', '3', '4')          -- exclut les personnes sans gravité renseignée
 ),
 
 vehicules as (select * from {{ ref('stg_vehicules') }}),
@@ -16,14 +16,14 @@ select
     u.grav,
     case when u.grav in ('2', '3') then 1 else 0 end                         as grave,
 
-    -- variables numériques (une valeur impossible devient NULL)
+    -- variables numériques (valeur aberrante -> NULL)
     case when c.an - u.an_nais between 0 and 100
          then (c.an - u.an_nais)::integer end                                as age,
     case when c.heure between 0 and 23 then c.heure end                      as heure,
     case when l.vma_brute between 5 and 130 then l.vma_brute end             as vma,
     case when l.nbv between 0 and 12 then l.nbv end                          as nbv,
 
-    -- variables de catégories : '-1' veut dire "non renseigné" et reste une catégorie
+    -- variables catégorielles : '-1' signifie "non renseigné" et est conservé comme modalité
     coalesce(u.place,  '-1')                                                 as place,
     coalesce(u.catu,   '-1')                                                 as catu,
     coalesce(u.sexe,   '-1')                                                 as sexe,

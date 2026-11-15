@@ -10,11 +10,11 @@ test-paths: ["tests"]
 models:
   dbt_accidents:
     staging:
-      +materialized: view      # les modèles "staging" sont des vues (nettoyage léger, colonne par colonne)
+      +materialized: view      # staging : vues de nettoyage léger
       +schema: staging
     intermediate:
       +materialized: view
       +schema: staging
     marts:
-      +materialized: table     # le résultat final est une vraie table
+      +materialized: table     # marts : table matérialisée
       +schema: marts
