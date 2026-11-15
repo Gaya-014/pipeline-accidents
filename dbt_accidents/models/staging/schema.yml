@@ -1,0 +1,47 @@
+version: 2
+
+models:
+  - name: stg_carac
+    description: "Un accident par ligne, avec les colonnes converties en vrais types."
+    columns:
+      - name: num_acc
+        description: "Numéro de l'accident (contient l'année)."
+        data_tests:
+          - unique
+          - not_null
+
+  - name: stg_lieux
+    description: "Un lieu par ligne (plusieurs par accident possibles en 2023)."
+    columns:
+      - name: num_acc
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_carac')
+              field: num_acc
+
+  - name: stg_usagers
+    description: "Une personne impliquée dans un accident par ligne."
+    columns:
+      - name: num_acc
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_carac')
+              field: num_acc
+      - name: id_vehicule
+        data_tests:
+          - not_null
+
+  - name: stg_vehicules
+    description: "Un véhicule par ligne."
+    columns:
+      - name: num_acc
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_carac')
+              field: num_acc
+      - name: id_vehicule
+        data_tests:
+          - not_null

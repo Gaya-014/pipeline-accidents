@@ -1,0 +1,11 @@
+version: 2
+
+sources:
+  - name: raw
+    description: "Données brutes chargées telles quelles (en texte) par le script d'ingestion."
+    schema: raw
+    tables:
+      - name: carac
+      - name: lieux
+      - name: usagers
+      - name: vehicules

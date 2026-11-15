@@ -1,0 +1,14 @@
+# Thème : nuit sur la route. Fond bleu d'asphalte, jaune de marquage comme couleur d'action.
+[theme]
+base = "dark"
+primaryColor = "#FFB020"
+backgroundColor = "#0D1520"
+secondaryBackgroundColor = "#162131"
+textColor = "#EEF2F7"
+font = "sans serif"
+
+[client]
+toolbarMode = "minimal"
+
+[browser]
+gatherUsageStats = false

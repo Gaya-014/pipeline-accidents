@@ -1,0 +1,9 @@
+.env
+data/
+__pycache__/
+*.pyc
+dbt_accidents/target/
+dbt_accidents/logs/
+dbt_accidents/dbt_packages/
+modele/*.joblib
+dbt_accidents/.user.yml

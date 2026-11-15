@@ -1,0 +1,13 @@
+version: 2
+
+models:
+  - name: int_lieux_unique
+    description: "Un seul lieu par accident (celui à la vitesse autorisée la plus élevée)."
+    columns:
+      - name: num_acc
+        data_tests:
+          - unique
+          - not_null
+          - relationships:
+              to: ref('stg_carac')
+              field: num_acc

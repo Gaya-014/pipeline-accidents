@@ -1,0 +1,25 @@
+version: 2
+
+models:
+  - name: accidents_usagers
+    description: "Une personne par ligne, avec le label 'grave' et toutes les variables. Table lue par le modèle."
+    columns:
+      - name: num_acc
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_carac')
+              field: num_acc
+      - name: id_vehicule
+        data_tests:
+          - not_null
+      - name: grav
+        data_tests:
+          - accepted_values:
+              values: ['1', '2', '3', '4']
+      - name: grave
+        data_tests:
+          - not_null
+          - accepted_values:
+              values: [0, 1]
+              quote: false

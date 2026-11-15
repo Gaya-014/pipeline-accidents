@@ -1,0 +1,68 @@
+services:
+  db:
+    image: postgres:16
+    container_name: accidents_db
+    env_file: .env
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  adminer:
+    image: adminer
+    container_name: accidents_adminer
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+
+  ingestion:
+    build: ./ingestion
+    env_file: .env
+    volumes:
+      - ./data:/data
+    depends_on:
+      db:
+        condition: service_healthy
+
+  dbt:
+    build: ./dbt_accidents
+    env_file: .env
+    volumes:
+      - ./dbt_accidents:/dbt
+    depends_on:
+      db:
+        condition: service_healthy
+
+  train:                       # lit la table marts, entraîne, écrit dans ./modele
+    build: ./app
+    env_file: .env
+    environment:
+      SORTIE: /sortie
+    volumes:
+      - ./app:/app
+      - ./modele:/sortie
+    command: ["python", "entrainer.py"]
+    depends_on:
+      db:
+        condition: service_healthy
+
+  app:                         # application web sur http://localhost:8501
+    build: ./app
+    env_file: .env
+    environment:
+      SORTIE: /sortie
+    volumes:
+      - ./app:/app
+      - ./modele:/sortie:ro
+    ports:
+      - "8501:8501"
+    command: ["streamlit", "run", "app.py", "--server.address=0.0.0.0", "--server.port=8501"]
+
+volumes:
+  pgdata:

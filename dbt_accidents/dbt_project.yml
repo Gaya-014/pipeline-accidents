@@ -1,0 +1,20 @@
+name: dbt_accidents
+version: "1.0.0"
+config-version: 2
+profile: accidents
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+
+models:
+  dbt_accidents:
+    staging:
+      +materialized: view      # les modèles "staging" sont des vues (nettoyage léger, colonne par colonne)
+      +schema: staging
+    intermediate:
+      +materialized: view
+      +schema: staging
+    marts:
+      +materialized: table     # le résultat final est une vraie table
+      +schema: marts

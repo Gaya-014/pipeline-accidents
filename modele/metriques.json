@@ -1,0 +1,50 @@
+{
+  "annees_apprentissage": [
+    2019,
+    2020,
+    2021
+  ],
+  "annee_validation": 2022,
+  "annee_test": 2023,
+  "seuil": 0.667,
+  "validation": {
+    "pr_auc": 0.6089,
+    "roc_auc": 0.872,
+    "precision": 0.5245,
+    "recall": 0.6628,
+    "f1": 0.5856,
+    "accuracy": 0.8308,
+    "accuracy_toujours_pas_grave": 0.8196,
+    "taux_de_graves": 0.1804,
+    "tn": 89908,
+    "fp": 13703,
+    "fn": 7692,
+    "tp": 15118,
+    "personnes": 126421
+  },
+  "test": {
+    "pr_auc": 0.6045,
+    "roc_auc": 0.8711,
+    "precision": 0.5316,
+    "recall": 0.6527,
+    "f1": 0.5859,
+    "accuracy": 0.8336,
+    "accuracy_toujours_pas_grave": 0.8196,
+    "taux_de_graves": 0.1804,
+    "tn": 89963,
+    "fp": 13039,
+    "fn": 7873,
+    "tp": 14796,
+    "personnes": 125671
+  },
+  "variables_importantes": {
+    "secu1": 0.1318,
+    "locp": 0.0582,
+    "obs": 0.0412,
+    "obsm": 0.0391,
+    "age": 0.026,
+    "secu2": 0.0258,
+    "col": 0.0221,
+    "vma": 0.0207
+  }
+}
